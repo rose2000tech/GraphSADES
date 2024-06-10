@@ -8,7 +8,7 @@ import pdb
 from torch.nn import Linear
 
 
-# 定义一个简单的 GCN 模型
+# 定义 GCN 模型
 class GNNModel(torch.nn.Module):
     def __init__(self, input_dim, hidden_dim, num_classes):
         super(GNNModel, self).__init__()
