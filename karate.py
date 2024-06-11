@@ -46,7 +46,7 @@ class GCN(torch.nn.Module) :
         h = h. tanh()
         h = self.conv3(h,edge_index)
         h = h. tanh()
-        #分类层
+
         out = self.classifier(h)
         return out,h
 
