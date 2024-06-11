@@ -141,7 +141,7 @@ def main(args):
     optimizer = torch.optim.AdamW(param_dicts, lr=args.lr, weight_decay=args.weight_decay)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.lr_drop)
 
-    #载入训练数据集
+    #Load pre-trained pmgat model, assign pretrain_dict
     dataset_train = build_dataset(image_set='train', args=args)
 
     if args.distributed:
@@ -153,7 +153,7 @@ def main(args):
     data_loader_train = DataLoader(dataset_train, batch_sampler=batch_sampler_train,
                                    collate_fn=utils.collate_fn, num_workers=args.num_workers)
 
-    # Load from pretrained pmgat model.加载预训练pmgat模型
+    # Load from pretrained pmgat model.
     assert args.num_queries == 100, args.num_queries
     assert args.enc_layers == 6 and args.dec_layers == 6
     assert args.backbone in ['resnet50', 'resnet101', 'swin'], args.backbone
@@ -164,11 +164,11 @@ def main(args):
     else:
         pretrain_model = None
     if pretrain_model is not None:
-        #加载预训练pmgat模型，赋值pretrain_dict
+        #Load pre-trained pmgat model, assign pretrain_dict
         pretrain_dict = torch.load(pretrain_model, map_location='cpu')['model']
-        #模型
+        #model
         my_model_dict = model_without_ddp.state_dict()
-        #k,v使用预训练模型进行embedding
+
         pretrain_dict = {k: v for k, v in pretrain_dict.items() if k in my_model_dict}
         my_model_dict.update(pretrain_dict)
         model_without_ddp.load_state_dict(my_model_dict)
