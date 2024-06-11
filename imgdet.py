@@ -1,4 +1,4 @@
-#检测物体和人，并剪裁
+#Detecting objects and humans and clipping
 import torch
 from torchvision import transforms
 from torchvision.models.detection import fasterrcnn_resnet50_fpn,FasterRCNN_ResNet50_FPN_Weights
@@ -12,50 +12,50 @@ import pdb
 
 class ObjDet():
     def __init__(self):
-        self.boxes=[] #检测出所有物体的方框
-        self.labels=[] #所有被检测出物体标签
-        # 加载预训练的 Faster R-CNN 模型
+        self.boxes=[] #Detects all objects in the box
+        self.labels=[] #Labeling of all detected objects
+        # Loading pre-trained Faster R-CNN models
         self.model = fasterrcnn_resnet50_fpn(pretrained=True, rpn_post_nms_top_n_test=200,
                                         box_batch_size_per_image=128,
                                         box_score_thresh=0.9, box_nms_thresh=0.3, weights=FasterRCNN_ResNet50_FPN_Weights.COCO_V1)
 
-    #image_path 加载待检测的图像
+    #image_path Load the image to be detected
     def GetDet(self,image_path= 'image/HICO_train2015_00000024.jpg'):
         self.model.eval()
 
-        # 用于图像转换的函数
+        # Functions for image conversion
         transform = transforms.Compose([transforms.ToTensor()])
 
-        # 获取原图文件名（不包括扩展名）
+        # Get the name of the original image file (excluding the extension)
         image_filename = os.path.splitext(os.path.basename(image_path))[0]
-        # 创建以原图文件名命名的文件夹
+        # Create a folder named after the original image file name
         output_folder = f'{image_filename}_objects'
-        # 检查并删除已存在的文件夹
+        # Check and delete existing folders
         if os.path.exists(output_folder):
             shutil.rmtree(output_folder)
         os.makedirs(output_folder, exist_ok=True)
 
         image = Image.open(image_path)
 
-        # 将图像转换为 PyTorch 张量
+        # Converting Images to PyTorch Tensor
         input_image = transform(image)
 
-        # 使用模型进行物体检测
+        # Object detection using models
         with torch.no_grad():
             prediction = self.model([input_image])
 
-        # 提取检测结果
+        # Extraction of test results
         self.boxes = prediction[0]['boxes'].cpu().numpy().astype(int)
         scores = prediction[0]['scores'].cpu().numpy()
         self.labels = prediction[0]['labels'].cpu().numpy()
         class_labels = metadata.coco_classes
 
-        # 设置阈值，以过滤掉低置信度的检测结果
+        # Set thresholds to filter out low confidence detections
         # threshold = 0.5
         selected_boxes = self.boxes  # boxes[scores >= threshold]
         selected_labels = self.labels
 
-        # 剪裁并保存检测到的物体
+        # Crop and save detected objects
         for i, (box, label) in enumerate(zip(selected_boxes, selected_labels)):
             x1, y1, x2, y2 = box
             cropped_object = image.crop((x1, y1, x2, y2))
@@ -63,15 +63,14 @@ class ObjDet():
             object_name = class_labels[label]
             object_filename = f'{object_name}_{i}.jpg'
             object_path = os.path.join(output_folder, object_filename)
-            cropped_object.save(object_path) #剪裁出的图片，保存到文件夹
+            cropped_object.save(object_path) #Crop out the image and save it to a folder
 
-            # 在原图上标注物体名称
+            # Labeling of object names on the original drawing
             # draw = ImageDraw.Draw(image)
             # draw.rectangle([x1, y1, x2, y2], outline='red', width=2)
             # draw.text((x1, y1), object_name, fill='red')
             # del draw
 
-        # 显示原图和检测结果
         # plt.imshow(np.array(image))
         # currentAxis = plt.gca()
         # for box in selected_boxes:
@@ -81,23 +80,23 @@ class ObjDet():
 
 
     def GetAdjMatrix(self,):
-        # 人类和物体的类别标签
-        person_label = 1  # 假设人的类别标签为1
+        # Category labels for humans and objects
+        person_label = 1  # Assuming that the category label of the person is 1
 
-        # 初始化邻接矩阵
+        # Initialize the adjacency matrix
         num_objects = len(self.boxes)
         adjacency_matrix = torch.zeros((num_objects, num_objects))
 
-        # 计算人与其他物体的空间距离并构建邻接矩阵
+        # Calculating spatial distances between people and other objects and constructing the adjacency matrix
         for i in range(num_objects):
             for j in range(num_objects):
-                if i != j:  # 不计算对象与自身的距离
-                    if self.labels[i] == person_label:  # 如果是人
+                if i != j:  # Does not count the distance of the object from itself
+                    if self.labels[i] == person_label:  # If it's a person
                         center_i = (self.boxes[i][0] + self.boxes[i][2]) / 2, (self.boxes[i][1] + self.boxes[i][3]) / 2
                         center_j = (self.boxes[j][0] + self.boxes[j][2]) / 2, (self.boxes[j][1] + self.boxes[j][3]) / 2
                         distance = torch.norm(torch.tensor(center_i) - torch.tensor(center_j))
                         adjacency_matrix[i, j] = distance
-                        # print(f"人-{metadata.coco_classes[self.labels[j]]}的距离{distance}，(i,j)=({i},{j})")
+                        # print(f"人-{metadata.coco_classes[self.labels[j]]} distance is {distance}，(i,j)=({i},{j})")
 
         return adjacency_matrix
 
