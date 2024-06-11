@@ -12,7 +12,7 @@ from torchinfo import  summary
 from torch_geometric.nn import GCNConv
 from torch.nn import Linear
 import pdb
-import numpy as np  # 导入 NumPy
+import numpy as np  # NumPy
 
 def visualize_graph(G, color):
     plt.figure(figsize=(7,7))
@@ -31,16 +31,16 @@ def visualize_embedding(h, color, epoch=None, loss=None):
         plt.xlabel(f'Epoch:{epoch},Loss: {loss.item():.4f}', fontsize=16)
     plt.show()
 
-#检测图像中的物体
+#Detecting objects in an image
 objdet=ObjDet()
-#检测图像中的物体，并把图像裁剪，缓存到文件夹中
+#Detecting objects in an image and cropping the image, caching it into a folder
 objdet.GetDet(image_path= 'image/HICO_train2015_00000024.jpg')
-adjacency_matrix=objdet.GetAdjMatrix()  #获取距离的邻接矩阵
+adjacency_matrix=objdet.GetAdjMatrix()  #Get the adjacency matrix of the distance
 objfeature=ObjFeatures(object_folder='HICO_train2015_00000024_objects')
-features=objfeature.GetFeatures()#获取距离的检测物体特征
+features=objfeature.GetFeatures()#Getting distance for detecting object features
 #print(features,adjacency_matrix)
 print(torch.nonzero(adjacency_matrix).transpose(0, 1))
-#构建 PyTorch Geometric 数据对象,一个Data一张图
+#Building PyTorch Geometric Data Objects, One Data One Map
 y=torch.tensor([[0,1],[0,1],[1,0],[1,0]])
 data = Data(x=torch.tensor(features), edge_index=torch.nonzero(adjacency_matrix).transpose(0, 1), edge_attr=None, y=y)
 #G=to_networkx(data,to_undirected=True)
@@ -52,7 +52,7 @@ data = Data(x=torch.tensor(features), edge_index=torch.nonzero(adjacency_matrix)
 
 feature_dim=len(features)
 print(feature_dim)
-#input_dim图卷积层中的权重矩阵的维度,图卷积层的输入特征维度应与权重矩阵的输入特征维度匹配
+#input_dim dimension of the weight matrix in the graph convolution layer, the input feature dimension of the graph convolution layer should match the input feature dimension of the weight matrix
 model=GNNModel(input_dim=1000,hidden_dim=4 ,num_classes=2)
 
 print(model)
@@ -68,7 +68,7 @@ optimizer = torch.optim.Adam(model.parameters(),lr=0.01) # Define optimizer
 
 def train(data) :
     optimizer.zero_grad()
-    out,h= model(data) #是两维向量，主要是为了咱们画个图
+    out,h= model(data) #It's a two-dimensional vector, mainly for us to draw a graph.
     #pdb.set_trace()
     loss = criterion(out, data.y.float()) # semi-supervised
     # (tensor([[0.5812, -0.4453],
@@ -79,13 +79,13 @@ def train(data) :
     optimizer.step()
     return loss
 
-losses = []  # 用于存储损失值的列表
+losses = []  # List for storing loss values
 for epoch in range(401):
     loss = train(data)
-    losses.append(loss.item())  # 使用.item()将PyTorch张量转换为NumPy float
+    losses.append(loss.item())  # Convert PyTorch tensor to NumPy float using .item()
     print(f'Epoch {epoch+1}, Loss: {loss}')
 
-# 创建并显示损失值图像
+# Creating and displaying lossy value images
 plt.plot(losses)
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
@@ -94,7 +94,7 @@ plt.show()
 
 print(data)
 
-# 预测连接关系
+# Predicting Connectivity Relationships
 model.eval()
 with torch.no_grad():
     predictions = model(data)
@@ -103,5 +103,5 @@ with torch.no_grad():
 
     predicted_connections = tuple(torch.argmax(tensor, dim=1) for tensor in predictions)
 
-# 输出预测的连接关系
+# Connection relations for output prediction
 print(predicted_connections)
