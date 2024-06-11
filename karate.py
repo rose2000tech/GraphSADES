@@ -33,13 +33,13 @@ class GCN(torch.nn.Module) :
     def __init__(self):
         super().__init__()
         torch.manual_seed(1234)
-        self.conv1 = GCNConv(dataset.num_features,4) # 只需定义好输入特征和输出特征即可
+        self.conv1 = GCNConv(dataset.num_features,4) # Simply define the input features and output features
         self.conv2 = GCNConv(4,4)
         self.conv3 = GCNConv(4,2)
         self.classifier = Linear(2,dataset.num_classes)
 
     def forward(self, x, edge_index):
-        h=self.conv1(x,edge_index) # 输入特征与邻接矩阵(注意格式，上面那种)
+        h=self.conv1(x,edge_index) # Input feature and adjacency matrix (note the format, the kind above)
 
         h = h. tanh()
         h = self.conv2(h,edge_index)
@@ -53,7 +53,7 @@ class GCN(torch.nn.Module) :
 
 model=GCN()
 print(model)
-# 计算参数数量
+# Calculate the number of parameters
 total_params = sum(p.numel() for p in model.parameters())
 print(f"Total Parameters: {total_params}")
 
@@ -62,7 +62,7 @@ optimizer = torch.optim.Adam(model.parameters(),lr=0.01) # Define optimizer
 
 def train(data) :
     optimizer.zero_grad()
-    out,h = model(data.x,data.edge_index) #是两维向量，主要是为了咱们画个图
+    out,h = model(data.x,data.edge_index) #It's a two-dimensional vector, mainly for us to draw a graph.
     pdb.set_trace()
     loss = criterion(out[data.train_mask], data.y[data.train_mask]) # semi-supervised
     # (tensor([[-0.1800, 0.6862, 0.1598, 0.1413],
